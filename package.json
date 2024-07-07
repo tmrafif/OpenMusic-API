@@ -14,7 +14,6 @@
   "description": "",
   "devDependencies": {
     "@eslint/js": "^9.6.0",
-    "eslint": "^9.6.0",
     "eslint-config-standard": "^17.1.0",
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-n": "^16.6.2",
@@ -25,6 +24,7 @@
   "dependencies": {
     "@hapi/hapi": "^21.3.10",
     "auto-bind": "^4.0.0",
+    "bcrypt": "^5.1.1",
     "dotenv": "^16.4.5",
     "joi": "^17.13.3",
     "nanoid": "^3.1",
