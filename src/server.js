@@ -1,6 +1,7 @@
 require("dotenv").config();
 
 const Hapi = require("@hapi/hapi");
+const Jwt = require("@hapi/jwt");
 
 // albums
 const albums = require("./api/albums");
@@ -17,6 +18,12 @@ const users = require("./api/users");
 const UsersServices = require("./services/postgres/UsersServices");
 const UsersValidator = require("./validator/users");
 
+// authentications
+const authentications = require("./api/authentications");
+const AuthenticationsServices = require("./services/postgres/AuthenticationsServices");
+const AuthenticationsValidator = require("./validator/authentications");
+const TokenManager = require("./tokenize/TokenManager");
+
 const ClientError = require("./exceptions/ClientError");
 
 const init = async () => {
@@ -24,6 +31,7 @@ const init = async () => {
     const albumsServices = new AlbumsServices();
     const songsServices = new SongsServices();
     const usersServices = new UsersServices();
+    const authenticationsServices = new AuthenticationsServices();
 
     const server = Hapi.server({
         port: process.env.PORT,
@@ -33,6 +41,26 @@ const init = async () => {
                 origin: ["*"],
             },
         },
+    });
+
+    // register external plugin
+    await server.register([{ plugin: Jwt }]);
+
+    // define jwt authentication strategy
+    server.auth.strategy("openmusicapp_jwt", "jwt", {
+        keys: process.env.ACCESS_TOKEN_KEY,
+        verify: {
+            aud: false,
+            iss: false,
+            sub: false,
+            maxAgeSec: process.env.ACCESS_TOKEN_AGE,
+        },
+        validate: (artifacts) => ({
+            isValid: true,
+            credentials: {
+                id: artifacts.decoded.payload.id,
+            },
+        }),
     });
 
     // register plugin
@@ -57,7 +85,16 @@ const init = async () => {
                 service: usersServices,
                 validator: UsersValidator,
             },
-        }
+        },
+        {
+            plugin: authentications,
+            options: {
+                authenticationsServices,
+                usersServices,
+                tokenManager: TokenManager,
+                validator: AuthenticationsValidator,
+            },
+        },
     ]);
 
     // extension function
@@ -75,7 +112,7 @@ const init = async () => {
 
         if (response instanceof Error) {
             const newResponse = h.response({
-                status: 'error',
+                status: "error",
                 message: response.output.payload.message,
             });
             newResponse.code(response.output.statusCode);
