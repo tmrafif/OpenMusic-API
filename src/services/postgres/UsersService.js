@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 const InvariantError = require("../../exceptions/InvariantError");
 const AuthenticationError = require('../../exceptions/AuthenticationError')
 
-class UsersServices {
+class UsersService {
     constructor() {
         this._pool = new Pool();
     }
@@ -66,4 +66,4 @@ class UsersServices {
     }
 }
 
-module.exports = UsersServices;
+module.exports = UsersService;

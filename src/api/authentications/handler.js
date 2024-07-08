@@ -2,13 +2,13 @@ const autoBind = require("auto-bind");
 
 class AuthenticationsHandler {
     constructor(
-        authenticationsServices,
-        usersServices,
+        authenticationsService,
+        usersService,
         tokenManager,
         validator
     ) {
-        this._authenticationsServices = authenticationsServices;
-        this._usersServices = usersServices;
+        this._authenticationsService = authenticationsService;
+        this._usersService = usersService;
         this._tokenManager = tokenManager;
         this._validator = validator;
 
@@ -19,7 +19,7 @@ class AuthenticationsHandler {
         this._validator.validatePostAuthenticationPayload(request.payload);
 
         const { username, password } = request.payload;
-        const id = await this._usersServices.verifyUserCredential({
+        const id = await this._usersService.verifyUserCredential({
             username,
             password,
         });
@@ -28,7 +28,7 @@ class AuthenticationsHandler {
         const refreshToken = this._tokenManager.generateRefreshToken({ id });
 
         // store refresh token
-        await this._authenticationsServices.addRefreshToken(refreshToken);
+        await this._authenticationsService.addRefreshToken(refreshToken);
 
         const response = h.response({
             status: "success",
@@ -47,7 +47,7 @@ class AuthenticationsHandler {
         const { refreshToken } = request.payload;
 
         // verify refresh token
-        await this._authenticationsServices.verifyRefreshToken(refreshToken);
+        await this._authenticationsService.verifyRefreshToken(refreshToken);
         const { id } = this._tokenManager.verifyRefreshToken(refreshToken);
 
         const accessToken = this._tokenManager.generateAccessToken({ id });
@@ -65,9 +65,9 @@ class AuthenticationsHandler {
         const { refreshToken } = request.payload;
 
         // verify refresh token
-        await this._authenticationsServices.verifyRefreshToken(refreshToken);
+        await this._authenticationsService.verifyRefreshToken(refreshToken);
 
-        await this._authenticationsServices.deleteRefreshToken(refreshToken);
+        await this._authenticationsService.deleteRefreshToken(refreshToken);
 
         const response = h.response({
             status: "success",

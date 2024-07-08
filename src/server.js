@@ -5,22 +5,22 @@ const Jwt = require("@hapi/jwt");
 
 // albums
 const albums = require("./api/albums");
-const AlbumsServices = require("./services/postgres/AlbumsServices");
+const AlbumsService = require("./services/postgres/AlbumsService");
 const AlbumsValidator = require("./validator/albums");
 
 // songs
 const songs = require("./api/songs");
-const SongsServices = require("./services/postgres/SongsServices");
+const SongsService = require("./services/postgres/SongsService");
 const SongsValidator = require("./validator/songs");
 
 // users
 const users = require("./api/users");
-const UsersServices = require("./services/postgres/UsersServices");
+const UsersService = require("./services/postgres/UsersService");
 const UsersValidator = require("./validator/users");
 
 // authentications
 const authentications = require("./api/authentications");
-const AuthenticationsServices = require("./services/postgres/AuthenticationsServices");
+const AuthenticationsService = require("./services/postgres/AuthenticationsService");
 const AuthenticationsValidator = require("./validator/authentications");
 const TokenManager = require("./tokenize/TokenManager");
 
@@ -28,10 +28,10 @@ const ClientError = require("./exceptions/ClientError");
 
 const init = async () => {
     // init services
-    const albumsServices = new AlbumsServices();
-    const songsServices = new SongsServices();
-    const usersServices = new UsersServices();
-    const authenticationsServices = new AuthenticationsServices();
+    const albumsService = new AlbumsService();
+    const songsService = new SongsService();
+    const usersService = new UsersService();
+    const authenticationsService = new AuthenticationsService();
 
     const server = Hapi.server({
         port: process.env.PORT,
@@ -68,29 +68,29 @@ const init = async () => {
         {
             plugin: albums,
             options: {
-                service: albumsServices,
+                service: albumsService,
                 validator: AlbumsValidator,
             },
         },
         {
             plugin: songs,
             options: {
-                service: songsServices,
+                service: songsService,
                 validator: SongsValidator,
             },
         },
         {
             plugin: users,
             options: {
-                service: usersServices,
+                service: usersService,
                 validator: UsersValidator,
             },
         },
         {
             plugin: authentications,
             options: {
-                authenticationsServices,
-                usersServices,
+                authenticationsService,
+                usersService,
                 tokenManager: TokenManager,
                 validator: AuthenticationsValidator,
             },
