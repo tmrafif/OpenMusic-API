@@ -9,39 +9,26 @@
  * @returns {Promise<void> | void}
  */
 exports.up = (pgm) => {
-    pgm.createTable("songs", {
+    pgm.createTable("playlists", {
         id: {
             type: "VARCHAR(50)",
             primaryKey: true,
         },
-        title: {
+        name: {
             type: "TEXT",
             notNull: true,
         },
-        year: {
-            type: "INTEGER",
-            notNull: true,
-        },
-        performer: {
-            type: "TEXT",
-            notNull: true,
-        },
-        genre: {
-            type: "TEXT",
-            notNull: true,
-        },
-        duration: {
-            type: "INTEGER",
-        },
-        album_id: {
+        owner: {
             type: "VARCHAR(50)",
+            notNull: true,
         },
     });
 
+    // add foreign key constraint
     pgm.addConstraint(
-        "songs",
-        "fk_songs.album_id",
-        "FOREIGN KEY(album_id) REFERENCES albums(id) ON DELETE CASCADE"
+        "playlists",
+        "fk_playlists.owner",
+        "FOREIGN KEY(owner) REFERENCES users(id)"
     );
 };
 
@@ -51,6 +38,8 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
-    pgm.dropConstraint("songs", "fk_songs.album_id");
-    pgm.dropTable("songs");
+    // drop foreign key constraint
+    pgm.dropConstraint("playlist", "fk_playlists.owner");
+
+    pgm.dropTable("playlists");
 };
