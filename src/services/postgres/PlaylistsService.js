@@ -2,11 +2,12 @@ const { Pool } = require("pg");
 const { nanoid } = require("nanoid");
 const InvariantError = require("../../exceptions/InvariantError");
 const NotFoundError = require("../../exceptions/NotFoundError");
-const AuthorizationError = require("../../exceptions/AuthorizationError")
+const AuthorizationError = require("../../exceptions/AuthorizationError");
 
 class PlaylistsService {
-    constructor() {
+    constructor(collaborationsService) {
         this._pool = new Pool();
+        this._collaborationsService = collaborationsService;
     }
 
     async addPlaylist({ name, owner }) {
@@ -25,14 +26,18 @@ class PlaylistsService {
         return result.rows[0].id;
     }
 
-    async getPlaylists(owner) {
+    async getPlaylists(userId) {
         const query = {
             text: `SELECT playlists.id, playlists.name, users.username 
             FROM playlists
             LEFT JOIN users
             ON playlists.owner = users.id
-            WHERE playlists.owner = $1`,
-            values: [owner],
+            LEFT JOIN collaborations
+            ON playlists.id = collaborations.playlist_id
+            WHERE playlists.owner = $1
+            OR collaborations.user_id = $1
+            GROUP BY playlists.id, users.username`,
+            values: [userId],
         };
 
         const result = await this._pool.query(query);
@@ -49,7 +54,7 @@ class PlaylistsService {
             WHERE playlists.id = $1`,
             values: [id],
         };
-        
+
         const result = await this._pool.query(query);
         if (!result.rows.length) {
             throw new NotFoundError("Playlist Id not found");
@@ -116,7 +121,7 @@ class PlaylistsService {
 
         const { rows: songs } = await this._pool.query(query);
 
-        const result = { ...playlist, songs }
+        const result = { ...playlist, songs };
         return result;
     }
 
@@ -149,7 +154,26 @@ class PlaylistsService {
         }
         const playlist = result.rows[0];
         if (playlist.owner !== ownerId) {
-            throw new AuthorizationError("You are not the owner of this playlist");
+            throw new AuthorizationError(
+                "You are not the owner of this playlist"
+            );
+        }
+    }
+
+    async verifyPlaylistAccess(playlistId, userId) {
+        // verify owner
+        try {
+            await this.verifyPlaylistOwner(playlistId, userId);
+        } catch (error) {
+            if (error instanceof NotFoundError) {
+                throw error;
+            }
+
+            // verify collaborator
+            await this._collaborationsService.verifyCollaborator(
+                playlistId,
+                userId
+            );
         }
     }
 }

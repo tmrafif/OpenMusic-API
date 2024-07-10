@@ -2,7 +2,8 @@ const { Pool } = require("pg");
 const { nanoid } = require("nanoid");
 const bcrypt = require("bcrypt");
 const InvariantError = require("../../exceptions/InvariantError");
-const AuthenticationError = require('../../exceptions/AuthenticationError')
+const AuthenticationError = require("../../exceptions/AuthenticationError");
+const NotFoundError = require("../../exceptions/NotFoundError");
 
 class UsersService {
     constructor() {
@@ -18,7 +19,7 @@ class UsersService {
         const result = await this._pool.query(query);
         if (result.rows.length > 0) {
             throw new InvariantError(
-                "Gagal menambahkan user, username sudah digunakan."
+                "User failed to add, username already taken"
             );
         }
     }
@@ -38,10 +39,23 @@ class UsersService {
 
         const result = await this._pool.query(query);
         if (!result.rows.length) {
-            throw new InvariantError("User gagal ditambahkan");
+            throw new InvariantError("User failed to add");
         }
 
         return result.rows[0].id;
+    }
+
+    async getUserById(id) {
+        const query = {
+            text: "SELECT id FROM users WHERE id = $1",
+            values: [id],
+        };
+        const result = await this._pool.query(query);
+        if (!result.rows.length) {
+            throw new NotFoundError("User not found");
+        }
+
+        return result.rows[0];
     }
 
     async verifyUserCredential({ username, password }) {
@@ -49,17 +63,21 @@ class UsersService {
             text: "SELECT id, password FROM users WHERE username = $1",
             values: [username],
         };
-        
+
         const result = await this._pool.query(query);
         if (!result.rows.length) {
-            throw new AuthenticationError("The credentials you provided are incorrect");
+            throw new AuthenticationError(
+                "The credentials you provided are incorrect"
+            );
         }
 
         const { id, password: hashedPassword } = result.rows[0];
 
         const match = await bcrypt.compare(password, hashedPassword);
         if (!match) {
-            throw new AuthenticationError("The credentials you provided are incorrect");
+            throw new AuthenticationError(
+                "The credentials you provided are incorrect"
+            );
         }
 
         return id;
