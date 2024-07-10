@@ -70,6 +70,9 @@ class PlaylistsHandler {
             songId,
         });
 
+        // add activity
+        await this._service.addPlaylistActivity(playlistId, songId, credentialId, "add");
+
         const response = h.response({
             status: "success",
             message: "Song added to playlist successfully",
@@ -106,9 +109,31 @@ class PlaylistsHandler {
 
         await this._service.deleteSongFromPlaylist(playlistId, songId);
 
+        // add activity
+        await this._service.addPlaylistActivity(playlistId, songId, credentialId, "delete");
+
         const response = h.response({
             status: "success",
             message: "Song deleted from playlist successfully",
+        });
+        return response;
+    }
+
+    async getPlaylistActivitiesHandler(request, h) {
+        const { id: playlistId } = request.params;
+        const { id: credentialId } = request.auth.credentials;
+
+        // verify playlist access
+        await this._service.verifyPlaylistAccess(playlistId, credentialId);
+
+        const activities = await this._service.getPlaylistActivities(playlistId);
+
+        const response = h.response({
+            status: "success",
+            data: {
+                playlistId,
+                activities,
+            },
         });
         return response;
     }
